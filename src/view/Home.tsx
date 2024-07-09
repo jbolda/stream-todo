@@ -1,28 +1,51 @@
-import React, { useContext } from "react";
+import React, { useCallback, useContext } from "react";
 import "./App.css";
 import { SystemTrayContext } from "../context";
+import { Layout } from "../components/Layout";
+import { Tabs } from "../components/Tabs";
+import { Todo } from "../components/TodoList";
+import { useAsyncList } from "react-stately";
+
+import { Form, ButtonGroup, Button, TextField } from "@adobe/react-spectrum";
+
+type TabListItem = { id: string; title: string };
+type TabList = { items: TabListItem[] };
 
 export default function Home() {
-  const { notifications } = useContext(SystemTrayContext);
+  const { store } = useContext(SystemTrayContext);
+
+  const tabs = useAsyncList({
+    async load() {
+      const tabsFromStore: TabList | null = await store!.get("tabs");
+      if (!tabsFromStore) throw new Error(`tabsFromStore: ${tabsFromStore}`);
+      return tabsFromStore;
+    },
+  });
+
+  const addTab = useCallback(async () => {
+    const newTab = { id: Date.now().toString(), title: Date.now().toString() };
+    await store!.set("tabs", { items: [...tabs.items, newTab] });
+    tabs.append(newTab);
+  }, [tabs]);
+  const removeTab = useCallback(async () => {
+    tabs.removeSelectedItems();
+  }, [tabs]);
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <p>Tauri Tray App</p>
-        <p>
-          <button
-            type="button"
-            onClick={() =>
-              notifications.send({
-                title: "Notification From Tauri",
-                body: "This is a notification from Tauri!",
-              })
-            }
-          >
-            notify me about something!
-          </button>
-        </p>
-      </header>
-    </div>
+    <Layout>
+      {tabs.isLoading ? (
+        <div>Loading...</div>
+      ) : (
+        <Tabs
+          items={tabs.items.map((tab) => ({
+            id: tab.id,
+            title: tab.title,
+            content: <Todo listId={tab.id} />,
+          }))}
+          addTab={addTab}
+          removeTab={removeTab}
+        />
+      )}
+    </Layout>
   );
 }

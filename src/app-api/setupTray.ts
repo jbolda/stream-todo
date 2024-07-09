@@ -8,29 +8,30 @@ import {
 
 export const setupTray = async ({ tooltip }: { tooltip?: string }) => {
   const action = async (event: TrayIconEvent) => {
-    const { clickType } = event;
-    const window = getCurrent();
+    if ("click" in event) {
+      const { click } = event;
+      const window = getCurrent();
 
-    // The mini-pop-up window should automatically
-    //  hide once you stop giving it focus
-    await getCurrent().onFocusChanged(({ payload: focused }) => {
-      if (!focused) window.hide();
-    });
+      // The mini-pop-up window should automatically
+      //  hide once you stop giving it focus
+      await getCurrent().onFocusChanged(({ payload: focused }) => {
+        if (!focused) window.hide();
+      });
 
-    if (clickType === "Right") {
-      await window.hide();
-    } else {
-      console.log(event);
-      await window.show();
-      const size = new LogicalSize(300, 400);
-      await window.setSize(size);
-      const iconOffset = 30;
-      const position = new LogicalPosition(
-        event.position.x - size.width,
-        event.position.y - size.height - iconOffset
-      );
-      const positioned = await window.setPosition(position);
-      await window.setFocus();
+      if (click.button === "Right") {
+        await window.hide();
+      } else {
+        const windowSize = await window.innerSize();
+        const iconOffset = 30;
+        const position = new LogicalPosition(
+          // @ts-expect-error the types are wrong
+          click.position.x - windowSize.width,
+          // @ts-expect-error the types are wrong
+          click.position.y - windowSize.height - iconOffset
+        );
+        const positioned = await window.setPosition(position);
+        await window.show().then(() => window.setFocus());
+      }
     }
   };
   const tray = await TrayIcon.new({ id: "js_tray_icon", action });

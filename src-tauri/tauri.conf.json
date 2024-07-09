@@ -1,5 +1,5 @@
 {
-  "identifier": "com.tauri.dev",
+  "identifier": "com.jacobolda.stream-todo",
   "productName": "tray-app",
   "version": "0.1.0",
   "build": {
@@ -14,13 +14,14 @@
     },
     "windows": [
       {
+        "label": "main",
         "fullscreen": false,
         "resizable": true,
         "title": "Tauri Tray",
         "decorations": false,
         "alwaysOnTop": true,
-        "center": true,
-        "width": 300,
+        "center": false,
+        "width": 400,
         "height": 400,
         "visible": false
       }
