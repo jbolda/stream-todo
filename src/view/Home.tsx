@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import "../view/App.css";
+import "./App.css";
 import { SystemTrayContext } from "../context";
 
 export default function Home() {

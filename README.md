@@ -1,25 +1,23 @@
-# Tauri System Tray App Starter Template
-
-Looking to create a [Tauri app](https://beta.tauri.app/) that runs in the background and is accessible through the system tray or a keyboard? Use this template as a way to jump start creating your app.
-
-It implements a few specific features that we might expect this use case to require:
-
-- system tray integration with mini-pop-up window
-- global shortcut to open the app
-- notification integration ready to handle native toasts
+# [Tauri](https://beta.tauri.app/) System Tray App
 
 ## Getting Started
 
-This is marked as a template in GitHub to allow one to more easily clone this into a new repo. Click `Use this template` to get started.
+This project is created with `Node` and `npm`. Run an `npm install` to get started and make certain you have the [Tauri prerequisites installed](https://beta.tauri.app/start/prerequisites/).
 
-The repository has three main folders: `javascript`, `rust`, and `snippets`. With the new features in v2 of Tauri, these APIs are accessible through either JavaScript or Rust. We have implemented the template at these two extremes. Feel free to choose whichever fits your preference, and pull code from the other to create a mix as needed; mix-and-match between these two implementations to find the best fit for your project.
+To run the Tauri app in development mode, use:
 
-The implementations between JavaScript and Rust are similar. The Rust implementations tend to be set within the Tauri builder which leads to the implementations being more build-time / setup-time oriented. Conversely the JavaScript implementation tends towards runtime. Each of these have both preference and possible use case considerations, hence the value of mix-and-matching.
+```shell
+npm run tauri dev
+```
 
-The snippets folder has example implementations for features that you may find useful, but were not expected to be widely applicable. As such, we include copy-and-paste code, but don't include it directly in the main templates.
+## Development
 
-## Background And Development
+The source folder includes two main folders: `src/app-api` and `src/view`. The `app-api` has implemented the Tauri APIs as abstracted pieces to improve the ability shift and move their lifecycle and startup hook as required. The `view` includes the main React view layer.
 
-Most of this was original done on live over a handful of YouTube streams! [Check out the playlist where we built the initial template.](https://www.youtube.com/playlist?list=PL6K94_Yb98WwE46qewjbk2WgmsLTnHnmd)
+The Tauri `app-api` functions return API hooks and/or use React Context, see `src/context.ts`, to enable use within the view layers. The `src-tauri` folder implements the minimal required Tauri builder Rust code, and plugin initialization.
 
-Interested in helping out? Check out the issues for planned work.
+To modify the system tray menu items, see the initial array of items in `src/view/App.tsx`. To send notifications, see the example in `src/view/Home.tsx` which fires a notification on button click. The global shortcuts are not exposed through the React Context, but can be modified directly in `src/app-api/setupShortcuts.ts`.
+
+## Background
+
+This was created based off of the [Tauri system tray app template](https://github.com/jbolda/personal-tray-app).

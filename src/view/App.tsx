@@ -1,5 +1,5 @@
 import React from "react";
-import "../view/App.css";
+import "./App.css";
 import Home from "./Home";
 import { SystemTrayContext } from "../context";
 import { useTauri } from "../hooks/setup";
