@@ -1,13 +1,16 @@
 import {
+  ActionGroup,
   Button,
   ButtonGroup,
   Form,
   Item,
   ListView,
   type Selection,
+  Text,
   TextField,
   useAsyncList,
 } from "@adobe/react-spectrum";
+import Delete from "@spectrum-icons/workflow/Delete";
 import { useCallback, useContext, useState } from "react";
 import { SystemTrayContext } from "../context";
 
@@ -63,6 +66,16 @@ export const Todo = ({ listId }: { listId: string }) => {
     [store]
   );
 
+  const handleDelete = useCallback(
+    async (key, previousItems) => {
+      await store!.set(`data.${listId}`, {
+        items: previousItems.filter((item) => item.id !== key),
+      });
+      todo.remove(key);
+    },
+    [store]
+  );
+
   const handleSelectionChange = useCallback(
     async (currentSet: Selection, currentItems) => {
       const updatedStoreItems = currentItems.map((item: TodoItem) => {
@@ -92,7 +105,22 @@ export const Todo = ({ listId }: { listId: string }) => {
           await handleSelectionChange(change, todo.items)
         }
       >
-        {(item) => <Item key={item.id}>{item.content}</Item>}
+        {(item) => (
+          <Item key={item.id} textValue={item.content}>
+            <Text>{item.content}</Text>
+            <ActionGroup
+              buttonLabelBehavior="hide"
+              onAction={async (actionKey) =>
+                await handleDelete(actionKey, todo.items)
+              }
+            >
+              <Item key={item.id} textValue="Delete">
+                <Delete />
+                <Text>Delete</Text>
+              </Item>
+            </ActionGroup>
+          </Item>
+        )}
       </ListView>
       <Form
         validationBehavior="native"

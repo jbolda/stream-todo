@@ -2,10 +2,12 @@ import {
   ActionGroup,
   Flex,
   Item,
+  Key,
   Tabs as SpectrumTabs,
   TabList,
   TabPanels,
 } from "@adobe/react-spectrum";
+import { useState } from "react";
 
 export const Tabs = ({
   items,
@@ -16,9 +18,15 @@ export const Tabs = ({
   addTab: any;
   removeTab: any;
 }) => {
+  let [selectedTab, setSelectedTab] = useState<Key>(items?.[0]?.id);
   if (items.length === 0) return null;
   return (
-    <SpectrumTabs aria-label="Items That We Will Do" items={items}>
+    <SpectrumTabs
+      aria-label="Items That We Will Do"
+      items={items}
+      selectedKey={selectedTab}
+      onSelectionChange={setSelectedTab}
+    >
       <Flex>
         <TabList flex="1 1 auto" minWidth="0px">
           {items.map((item) => (
@@ -34,8 +42,11 @@ export const Tabs = ({
           }}
         >
           <ActionGroup
+            isQuiet
             disabledKeys={items.length === 1 ? ["remove"] : undefined}
-            onAction={(val) => (val === "add" ? addTab() : removeTab())}
+            onAction={(val) =>
+              val === "add" ? addTab(val) : removeTab(selectedTab)
+            }
           >
             <Item key="add">Add Tab</Item>
             <Item key="remove">Remove Tab</Item>

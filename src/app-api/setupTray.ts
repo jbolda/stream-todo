@@ -1,10 +1,6 @@
 import { Menu } from "@tauri-apps/api/menu";
 import { TrayIcon, TrayIconEvent } from "@tauri-apps/api/tray";
-import {
-  LogicalPosition,
-  LogicalSize,
-  getCurrent,
-} from "@tauri-apps/api/window";
+import { LogicalPosition, getCurrent } from "@tauri-apps/api/window";
 
 export const setupTray = async ({ tooltip }: { tooltip?: string }) => {
   const action = async (event: TrayIconEvent) => {
@@ -29,7 +25,7 @@ export const setupTray = async ({ tooltip }: { tooltip?: string }) => {
           // @ts-expect-error the types are wrong
           click.position.y - windowSize.height - iconOffset
         );
-        const positioned = await window.setPosition(position);
+        await window.setPosition(position);
         await window.show().then(() => window.setFocus());
       }
     }

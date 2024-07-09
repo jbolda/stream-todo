@@ -22,14 +22,27 @@ export default function Home() {
     },
   });
 
-  const addTab = useCallback(async () => {
-    const newTab = { id: Date.now().toString(), title: Date.now().toString() };
-    await store!.set("tabs", { items: [...tabs.items, newTab] });
-    tabs.append(newTab);
-  }, [tabs]);
-  const removeTab = useCallback(async () => {
-    tabs.removeSelectedItems();
-  }, [tabs]);
+  const addTab = useCallback(
+    async (tabValue) => {
+      const newTab = {
+        id: Date.now().toString(),
+        title: Date.now().toString(),
+      };
+      await store!.set("tabs", { items: [...tabs.items, newTab] });
+      tabs.append(newTab);
+    },
+    [tabs]
+  );
+  const removeTab = useCallback(
+    async (tabValue) => {
+      console.dir({ tabValue, tabs });
+      await store!.set("tabs", {
+        items: tabs.items.filter((item) => item.id !== tabValue),
+      });
+      tabs.remove(tabValue);
+    },
+    [tabs]
+  );
 
   return (
     <Layout>
