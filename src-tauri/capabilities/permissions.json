@@ -26,6 +26,7 @@
     "tray:allow-set-tooltip",
     "menu:allow-new",
     "menu:allow-append",
+    "positioner:default",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",

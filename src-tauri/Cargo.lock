@@ -73,6 +73,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-global-shortcut",
  "tauri-plugin-notification",
+ "tauri-plugin-positioner",
  "tauri-plugin-store",
 ]
 
@@ -3681,6 +3682,21 @@ dependencies = [
  "thiserror",
  "time",
  "url",
+]
+
+[[package]]
+name = "tauri-plugin-positioner"
+version = "2.0.0-beta.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1115f6f10c7463e1ae082dd957b2495427141ebae7ef0688e0e33f21ecac14d9"
+dependencies = [
+ "log",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "tauri",
+ "tauri-plugin",
+ "thiserror",
 ]
 
 [[package]]

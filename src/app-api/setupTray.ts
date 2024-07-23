@@ -1,6 +1,7 @@
 import { Menu } from "@tauri-apps/api/menu";
 import { TrayIcon, TrayIconEvent } from "@tauri-apps/api/tray";
-import { LogicalPosition, getCurrent } from "@tauri-apps/api/window";
+import { getCurrent } from "@tauri-apps/api/window";
+import { moveWindow, Position } from "@tauri-apps/plugin-positioner";
 
 export const setupTray = async ({ tooltip }: { tooltip?: string }) => {
   const action = async (event: TrayIconEvent) => {
@@ -17,15 +18,7 @@ export const setupTray = async ({ tooltip }: { tooltip?: string }) => {
       if (click.button === "Right") {
         await window.hide();
       } else {
-        const windowSize = await window.innerSize();
-        const iconOffset = 30;
-        const position = new LogicalPosition(
-          // @ts-expect-error the types are wrong
-          click.position.x - windowSize.width,
-          // @ts-expect-error the types are wrong
-          click.position.y - windowSize.height - iconOffset
-        );
-        await window.setPosition(position);
+        await moveWindow(Position.TrayCenter);
         await window.show().then(() => window.setFocus());
       }
     }
