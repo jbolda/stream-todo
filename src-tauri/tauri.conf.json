@@ -16,14 +16,14 @@
       {
         "label": "main",
         "fullscreen": false,
-        "resizable": true,
+        "resizable": false,
         "title": "Stream TODO",
         "decorations": false,
         "alwaysOnTop": true,
-        "center": false,
+        "center": true,
         "width": 400,
         "height": 400,
-        "visible": false
+        "visible": true
       }
     ]
   },
