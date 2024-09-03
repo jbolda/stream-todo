@@ -30,7 +30,7 @@
     "core:tray:allow-set-show-menu-on-left-click",
     "core:menu:allow-new",
     "core:menu:allow-append",
-    "positioner:default",
+    "positioner:allow-move-window",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",

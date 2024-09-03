@@ -23,7 +23,17 @@ export const setupTray = async ({ tooltip }: { tooltip?: string }) => {
       }
     }
   };
-  const tray = await TrayIcon.new({ id: "js_tray_icon", action });
+
+  const existing = await TrayIcon.getById("main");
+  if (existing) {
+    // if we adjust the visibility state first
+    //  then it seems to release the icon and item
+    //  otherwise it never closes or disappears
+    await existing.setVisible(false);
+    await existing.close();
+  }
+
+  const tray = await TrayIcon.new({ id: "main", action });
   if (tooltip) tray.setTooltip(tooltip);
   await tray.setIcon("icons/icon.png");
   const menu = await Menu.new();

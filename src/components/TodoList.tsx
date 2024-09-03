@@ -50,8 +50,10 @@ export const Todo = ({ listId }: { listId: string }) => {
       event.currentTarget.reset();
 
       if (todoItemText) {
+        // if we need to decode then
+        // new TextDecoder().decode(base64ToBytes("YSDEgCDwkICAIOaWhyDwn6aE")); // "a Ā 𐀀 文 🦄"
         const todoItem = {
-          id: todoItemText.replace(/ /, "-"),
+          id: bytesToBase64(new TextEncoder().encode(todoItemText)),
           content: todoItemText,
           checked: false,
         };
@@ -147,3 +149,17 @@ export const Todo = ({ listId }: { listId: string }) => {
     </>
   );
 };
+
+function base64ToBytes(base64) {
+  const binString = atob(base64);
+  return Uint8Array.from(binString, (m) => m.codePointAt(0));
+}
+
+function bytesToBase64(bytes) {
+  const binString = Array.from(bytes, (byte) =>
+    String.fromCodePoint(byte)
+  ).join("");
+  return btoa(binString);
+}
+
+// Usage
