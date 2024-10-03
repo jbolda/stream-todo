@@ -6,21 +6,22 @@
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@adobe/react-spectrum": "^3.35.1",
-    "@tauri-apps/api": "^2.0.0-rc.3",
-    "@tauri-apps/plugin-global-shortcut": "^2.0.0-rc.0",
-    "@tauri-apps/plugin-notification": "^2.0.0-rc.0",
-    "@tauri-apps/plugin-store": "^2.0.0-rc.0",
-    "@tauri-apps/plugin-positioner": "^2.0.0-rc.0",
+    "@tauri-apps/api": "^2.0.1",
+    "@tauri-apps/plugin-global-shortcut": "^2.0.0",
+    "@tauri-apps/plugin-notification": "^2.0.0",
+    "@tauri-apps/plugin-store": "^2.0.0",
+    "@tauri-apps/plugin-positioner": "^2.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-stately": "^3.31.1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.0.0-rc.7",
+    "@tauri-apps/cli": "^2.0.1",
     "@types/react": "^17.0.80",
     "@types/react-dom": "^17.0.25",
     "@vitejs/plugin-react": "^4.3.1",

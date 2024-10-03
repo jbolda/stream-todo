@@ -2,7 +2,7 @@ import { setupGlobalShortcuts } from "./setupShortcuts";
 import { setupTray } from "./setupTray";
 import { NotificationAPI } from "./setupNotifications";
 import { Menu, MenuItem, type MenuItemOptions } from "@tauri-apps/api/menu";
-import { Store } from "@tauri-apps/plugin-store";
+import { createStore, Store } from "@tauri-apps/plugin-store";
 
 export interface TauriAPIs {
   tray: null | Menu;
@@ -22,7 +22,10 @@ export async function initTauri(
   }
 
   await setupGlobalShortcuts();
-  const store = new Store("store.bin");
+  const store = await createStore("store.bin", {
+    // @ts-expect-error type and invoke call mismatch
+    autoSave: 1,
+  });
 
   // await store.reset();
   if (!(await store?.get("tabs")))

@@ -10,21 +10,18 @@ import {
 export const setupTray = async ({ tooltip }: { tooltip?: string }) => {
   const action = async (event: TrayIconEvent) => {
     await handleIconState(event);
-    if ("click" in event) {
-      const { click } = event;
+    if (event.type === "Click") {
       const window = getCurrentWindow();
-
       // The mini-pop-up window should automatically
       //  hide once you stop giving it focus
       await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
         if (!focused) window.hide();
       });
 
-      if (click.button === "Right") {
+      if (event.button === "Right") {
         await window.hide();
       } else {
-        console.log({ Position });
-        await moveWindow(15); //Position.TrayLeftAlignRight);
+        await moveWindow(Position.TrayCenter);
         await window.show().then(() => window.setFocus());
       }
     }
@@ -33,14 +30,14 @@ export const setupTray = async ({ tooltip }: { tooltip?: string }) => {
   // this will handle cases in dev with hot reloading
   //  and with the initial icon set by the Rust-based
   //  Tauri builder setup function
-  // const existing = await TrayIcon.getById("main");
-  // if (existing) {
-  //   // if we adjust the visibility state first
-  //   //  then it seems to release the icon and item
-  //   //  otherwise it never closes or disappears
-  //   await existing.setVisible(false);
-  //   await existing.close();
-  // }
+  const existing = await TrayIcon.getById("main");
+  if (existing) {
+    // if we adjust the visibility state first
+    //  then it seems to release the icon and item
+    //  otherwise it never closes or disappears
+    await existing.setVisible(false);
+    await existing.close();
+  }
 
   const tray = await TrayIcon.new({ id: "main", action });
   if (tooltip) tray.setTooltip(tooltip);
