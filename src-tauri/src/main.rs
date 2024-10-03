@@ -15,7 +15,9 @@ fn main() {
     .plugin(tauri_plugin_positioner::init())
     // This is required to get tray-relative positions to work
     // .setup(|app| {
-    //   TrayIconBuilder::new()
+    //   // TrayIconBuilder::with_id("main")
+    //   // TrayIconBuilder::new()
+    //   TrayIconBuilder::with_id("main")
     //     .on_tray_icon_event(|app, event| {
     //       tauri_plugin_positioner::on_tray_event(app.app_handle(), &event);
     //     })

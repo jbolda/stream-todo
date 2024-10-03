@@ -10,21 +10,21 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "2.0.0-rc.6", features = [] }
+tauri-build = { version = "2.0.0-rc.7", features = [] }
 
 [dependencies]
+tauri-plugin-positioner = { version = "2.0.0-rc.1", features = [
+    "tray-icon",
+], path = "../../../tauri-apps/plugins-workspace/plugins/positioner" }
+
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sysinfo = "0.30.13"
-tauri = { version = "2.0.0-rc.6", features = ["tray-icon", "image-png"] }
+tauri = { version = "2.0.0-rc.8", features = ["tray-icon", "image-png"] }
 tauri-plugin-devtools = "2.0.0-rc.0"
-tauri-plugin-global-shortcut = "2.0.0-rc.1"
-tauri-plugin-notification = "2.0.0-rc.2"
-tauri-plugin-store = "2.0.0-rc.2"
-
+tauri-plugin-global-shortcut = "2.0.0-rc.2"
+tauri-plugin-notification = "2.0.0-rc.3"
+tauri-plugin-store = "2.0.0-rc.3"
 [features]
 custom-protocol = ["tauri/custom-protocol"]
 default = ["custom-protocol"]
-
-[target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
-tauri-plugin-positioner = { version = "2.0.0-rc.0", features = ["tray-icon"] }

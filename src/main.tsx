@@ -5,6 +5,32 @@ import App from "./view/App";
 import { initTauri } from "./app-api";
 import { type MenuItemOptions } from "@tauri-apps/api/menu";
 
+// https://github.com/tauri-apps/wry/issues/30#issuecomment-1061465700
+function disableMenu() {
+  if (window.location.hostname !== "tauri.localhost") {
+    return;
+  }
+
+  document.addEventListener(
+    "contextmenu",
+    (e) => {
+      e.preventDefault();
+      return false;
+    },
+    { capture: true }
+  );
+
+  document.addEventListener(
+    "selectstart",
+    (e) => {
+      e.preventDefault();
+      return false;
+    },
+    { capture: true }
+  );
+}
+disableMenu();
+
 const menuItems = [
   // {
   //   id: "menuID",

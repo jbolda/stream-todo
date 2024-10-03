@@ -126,17 +126,12 @@ export const Todo = ({ listId }: { listId: string }) => {
       </ListView>
       <Form
         validationBehavior="native"
+        autoComplete="off"
         maxWidth="size-3000"
         isQuiet
         onSubmit={async (event) => await handleSubmit(event, todo.items)}
       >
-        <TextField
-          label="Item"
-          name="item"
-          isRequired
-          autoComplete="hidden"
-          id="enter-item"
-        />
+        <TextField label="Item" name="item" isRequired id="enter-item" />
         <ButtonGroup>
           <Button type="submit" variant="primary">
             Add
