@@ -6,8 +6,6 @@ import { Tabs } from "../components/Tabs";
 import { Todo } from "../components/TodoList";
 import { useAsyncList } from "react-stately";
 
-import { Form, ButtonGroup, Button, TextField } from "@adobe/react-spectrum";
-
 type TabListItem = { id: string; title: string };
 type TabList = { items: TabListItem[] };
 

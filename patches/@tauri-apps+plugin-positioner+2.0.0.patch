@@ -1,0 +1,20 @@
+diff --git a/node_modules/@tauri-apps/plugin-positioner/dist-js/index.js b/node_modules/@tauri-apps/plugin-positioner/dist-js/index.js
+index fe3c7b2..b68b31b 100644
+--- a/node_modules/@tauri-apps/plugin-positioner/dist-js/index.js
++++ b/node_modules/@tauri-apps/plugin-positioner/dist-js/index.js
+@@ -37,13 +37,11 @@ async function moveWindow(to) {
+     });
+ }
+ async function handleIconState(event) {
+-    const size = {};
+-    size[`${event.rect.size.type}`] = {
++    const size = {
+         width: event.rect.size.width,
+         height: event.rect.size.height
+     };
+-    const position = {};
+-    position[`${event.rect.position.type}`] = {
++    const position = {
+         x: event.rect.position.x,
+         y: event.rect.position.y
+     };

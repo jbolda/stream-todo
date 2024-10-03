@@ -1,13 +1,7 @@
-import { Menu } from "@tauri-apps/api/menu";
 import { createContext } from "react";
-import { NotificationAPI } from "./app-api/setupNotifications";
-import { Store } from "@tauri-apps/plugin-store";
+import type { TauriAPIs } from "./app-api";
 
-export const SystemTrayContext = createContext<{
-  tray: null | Menu;
-  notifications: Awaited<NotificationAPI>;
-  store: null | Store;
-}>({
+export const SystemTrayContext = createContext<TauriAPIs>({
   tray: null,
   notifications: {
     send: async () => console.log("notifications not initialized"),

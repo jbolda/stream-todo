@@ -12,18 +12,19 @@
     "security": {
       "csp": "default-src blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline' 'self' img-src: 'self'; connect-src ipc: http://ipc.localhost ipc: http://ipc.localhost ipc: http://ipc.localhost"
     },
+    "trayIcon": null,
     "windows": [
       {
         "label": "main",
         "fullscreen": false,
-        "resizable": true,
+        "resizable": false,
         "title": "Stream TODO",
         "decorations": false,
         "alwaysOnTop": true,
-        "center": false,
+        "center": true,
         "width": 400,
         "height": 400,
-        "visible": false
+        "visible": true
       }
     ]
   },
