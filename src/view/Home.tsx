@@ -1,62 +1,42 @@
-import React, { useCallback, useContext } from "react";
-import "./App.css";
-import { SystemTrayContext } from "../context";
+import React from "react";
 import { Layout } from "../components/Layout";
 import { Tabs } from "../components/Tabs";
 import { Todo } from "../components/TodoList";
-import { useAsyncList } from "react-stately";
-
-type TabListItem = { id: string; title: string };
-type TabList = { items: TabListItem[] };
+import { BaseDirectory } from "@tauri-apps/plugin-fs";
+import { useDispatch, useSelector } from "starfx/react";
+import { schema } from "../store/schema";
+import { addStream, removeStream } from "../store/thunks/stream";
 
 export default function Home() {
-  const { store } = useContext(SystemTrayContext);
-
-  const tabs = useAsyncList({
-    async load() {
-      const tabsFromStore: TabList | null = await store!.get("tabs");
-      if (!tabsFromStore) throw new Error(`tabsFromStore: ${tabsFromStore}`);
-      return tabsFromStore;
-    },
-  });
-
-  const addTab = useCallback(
-    async (tabValue) => {
-      const newTab = {
-        id: Date.now().toString(),
-        title: Date.now().toString(),
-      };
-      await store!.set("tabs", { items: [...tabs.items, newTab] });
-      tabs.append(newTab);
-    },
-    [tabs]
-  );
-  const removeTab = useCallback(
-    async (tabValue) => {
-      console.dir({ tabValue, tabs });
-      await store!.set("tabs", {
-        items: tabs.items.filter((item) => item.id !== tabValue),
-      });
-      tabs.remove(tabValue);
-    },
-    [tabs]
-  );
+  const dispatch = useDispatch();
+  const tabs = useSelector(schema.streams.selectTableAsList);
 
   return (
     <Layout>
-      {tabs.isLoading ? (
-        <div>Loading...</div>
-      ) : (
-        <Tabs
-          items={tabs.items.map((tab) => ({
-            id: tab.id,
-            title: tab.title,
-            content: <Todo listId={tab.id} />,
-          }))}
-          addTab={addTab}
-          removeTab={removeTab}
-        />
-      )}
+      <Tabs
+        items={tabs.map((tab) => ({
+          id: tab.id,
+          title: tab.title,
+          content: (
+            <Todo
+              listId={tab.id}
+              fileOpts={{
+                name: tab.filename,
+                options: {
+                  write: false,
+                  create: false,
+                  truncate: false,
+                  baseDir: BaseDirectory.Document,
+                },
+              }}
+            />
+          ),
+        }))}
+        addTab={() => dispatch(addStream())}
+        removeTab={(tabValue: string) =>
+          dispatch(removeStream({ id: tabValue }))
+        }
+      />
     </Layout>
   );
 }

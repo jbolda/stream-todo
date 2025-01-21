@@ -37,13 +37,23 @@
     "global-shortcut:allow-unregister",
     "global-shortcut:default",
     "notification:default",
-    "store:default",
-    "store:allow-get",
-    "store:allow-set",
-    "store:allow-save",
-    "store:allow-load",
-    "store:allow-reset",
-    "store:allow-entries"
+    "fs:allow-fstat",
+    {
+      "identifier": "fs:allow-open",
+      "allow": [{ "path": "$DOCUMENT/**" }]
+    },
+    {
+      "identifier": "fs:allow-read",
+      "allow": [{ "path": "$DOCUMENT/**" }]
+    },
+    {
+      "identifier": "fs:allow-write",
+      "allow": [{ "path": "$DOCUMENT/**" }]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "$DOCUMENT/**" }]
+    }
   ],
   "platforms": ["linux", "macOS", "windows"]
 }
