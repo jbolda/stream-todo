@@ -1,120 +1,86 @@
+import React from "react";
 import {
   ActionGroup,
   Button,
   ButtonGroup,
+  Checkbox,
   Form,
   Item,
   ListView,
-  type Selection,
   Text,
   TextField,
-  useAsyncList,
+  useDragAndDrop,
 } from "@adobe/react-spectrum";
 import Delete from "@spectrum-icons/workflow/Delete";
-import { useCallback, useContext, useState } from "react";
-import { SystemTrayContext } from "../context";
+import {
+  getLocalTimeZone,
+  now,
+  parseAbsoluteToLocal,
+} from "@internationalized/date";
+import { useDispatch, useSelector } from "starfx/react";
+import { Stream } from "../store/schema";
+import {
+  addToDo,
+  removeToDo,
+  setToDoOrder,
+  setToDoSelection,
+} from "../store/thunks";
+import { todosByStreamFilenameWithOrder } from "../store/selectors/todo";
+import { AnyState } from "starfx";
 
-type TodoItem = { id: string; content: string; checked: boolean };
-type TodoList = { items: TodoItem[] };
+export const Todo = ({ stream }: { stream: Stream }) => {
+  const dispatch = useDispatch();
+  const todos = useSelector((s: AnyState) =>
+    todosByStreamFilenameWithOrder(s, stream.filename)
+  );
 
-export const Todo = ({ listId }: { listId: string }) => {
-  const { store } = useContext(SystemTrayContext);
-
-  let [selectedKeys, setSelectedKeys] = useState<Selection>(new Set());
-
-  let todo = useAsyncList({
-    async load() {
-      const tabsFromStore: TodoList | null = await store!.get(`data.${listId}`);
-      if (!tabsFromStore) {
-        const noItems = {
-          items: [], // { id: "default", content: "add something please" }
-        } as TodoList;
-        await store!.set(`data.${listId}`, noItems);
-        return noItems;
-      }
-      const selected = tabsFromStore.items
-        .filter((item) => item.checked)
-        .map((item) => item.id);
-      setSelectedKeys(new Set(selected));
-
-      return tabsFromStore;
-    },
-  });
-
-  const handleSubmit = useCallback(
-    async (event, previousItems) => {
-      // prevent form from default server send and page refresh
-      event.preventDefault();
-      const todoItemText = event.target?.item?.value;
-      // reset the form
-      event.currentTarget.reset();
-
-      if (todoItemText) {
-        // if we need to decode then
-        // new TextDecoder().decode(base64ToBytes("YSDEgCDwkICAIOaWhyDwn6aE")); // "a Ā 𐀀 文 🦄"
-        const todoItem = {
-          id: bytesToBase64(new TextEncoder().encode(todoItemText)),
-          content: todoItemText,
-          checked: false,
+  let { dragAndDropHooks } = useDragAndDrop({
+    getItems(keys) {
+      return [...keys].map((key) => {
+        let item = todos.find((todo) => todo.id === key);
+        return {
+          "custom-app-type-reorder": JSON.stringify(item),
+          "text/plain": item?.content ?? "",
         };
-
-        const storeItems: TodoItem[] = [...previousItems, todoItem];
-        await store!.set(`data.${listId}`, {
-          items: storeItems,
-        });
-        todo.append(todoItem);
-      }
-    },
-    [store]
-  );
-
-  const handleDelete = useCallback(
-    async (key, previousItems) => {
-      await store!.set(`data.${listId}`, {
-        items: previousItems.filter((item) => item.id !== key),
       });
-      todo.remove(key);
     },
-    [store]
-  );
-
-  const handleSelectionChange = useCallback(
-    async (currentSet: Selection, currentItems) => {
-      const updatedStoreItems = currentItems.map((item: TodoItem) => {
-        const checked = currentSet === "all" || currentSet.has(item.id);
-        return { ...item, checked };
-      });
-      await store!.set(`data.${listId}`, {
-        items: updatedStoreItems,
-      });
-      setSelectedKeys(currentSet);
+    acceptedDragTypes: ["custom-app-type-reorder"],
+    onReorder: async (e) => {
+      let { keys, target } = e;
+      dispatch(setToDoOrder({ keys, target }));
     },
-    [store]
-  );
+    getAllowedDropOperations: () => ["move"],
+  });
 
   return (
     <>
       <ListView
-        selectionMode="multiple"
-        density="spacious"
+        selectionMode="single"
+        selectionStyle="highlight"
         aria-label="Async loading ListView example"
         maxWidth="size-6000"
-        items={todo.items}
-        loadingState={todo.loadingState}
-        selectionStyle="checkbox"
-        selectedKeys={selectedKeys}
-        onSelectionChange={async (change) =>
-          await handleSelectionChange(change, todo.items)
-        }
+        items={todos}
+        overflowMode="wrap"
+        dragAndDropHooks={dragAndDropHooks}
       >
         {(item) => (
-          <Item key={item.id} textValue={item.content}>
+          <Item textValue={item.content}>
+            <Checkbox
+              aria-label="completion status"
+              isSelected={item.checked}
+              onChange={(isSelected: boolean) =>
+                dispatch(setToDoSelection({ isSelected, id: item.id }))
+              }
+            />
             <Text>{item.content}</Text>
+            {item?.finishedAt ? (
+              <Text slot="description">
+                {humanizeDuration(item.finishedAt)}
+              </Text>
+            ) : null}
             <ActionGroup
               buttonLabelBehavior="hide"
-              onAction={async (actionKey) =>
-                await handleDelete(actionKey, todo.items)
-              }
+              onAction={(id) => dispatch(removeToDo({ id }))}
             >
               <Item key={item.id} textValue="Delete">
                 <Delete />
@@ -129,15 +95,23 @@ export const Todo = ({ listId }: { listId: string }) => {
         autoComplete="off"
         maxWidth="size-3000"
         isQuiet
-        onSubmit={async (event) => await handleSubmit(event, todo.items)}
+        onSubmit={(event) => {
+          event.preventDefault();
+          const content = event?.target?.item?.value;
+          dispatch(addToDo({ filename: stream.filename, content }));
+          event?.target?.reset();
+        }}
       >
-        <TextField label="Item" name="item" isRequired id="enter-item" />
+        <TextField
+          label="Item"
+          name="item"
+          isRequired
+          id="enter-item"
+          spellCheck="true"
+        />
         <ButtonGroup>
           <Button type="submit" variant="primary">
             Add
-          </Button>
-          <Button type="reset" variant="secondary">
-            Clear
           </Button>
         </ButtonGroup>
       </Form>
@@ -145,16 +119,19 @@ export const Todo = ({ listId }: { listId: string }) => {
   );
 };
 
-function base64ToBytes(base64) {
-  const binString = atob(base64);
-  return Uint8Array.from(binString, (m) => m.codePointAt(0));
-}
+const formatDuration = new Intl.DurationFormat("en", { style: "narrow" });
+function humanizeDuration(finishedAtDateTime: string) {
+  const secondsFromDT =
+    now(getLocalTimeZone()).compare(parseAbsoluteToLocal(finishedAtDateTime)) /
+    1000;
 
-function bytesToBase64(bytes) {
-  const binString = Array.from(bytes, (byte) =>
-    String.fromCodePoint(byte)
-  ).join("");
-  return btoa(binString);
+  if (secondsFromDT > 24 * 60 * 60) {
+    return `completed some time ago`;
+  } else {
+    const hours = Math.floor(secondsFromDT / 3600);
+    const minutes = Math.floor((secondsFromDT % 3600) / 60);
+    const seconds = Math.round(secondsFromDT % 60);
+    const duration = { hours, minutes, seconds };
+    return `completed ${formatDuration.format(duration)} ago`;
+  }
 }
-
-// Usage

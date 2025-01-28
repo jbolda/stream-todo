@@ -48,8 +48,8 @@ export const Tabs = ({
               val === "add" ? addTab(val) : removeTab(selectedTab)
             }
           >
-            <Item key="add">Add Tab</Item>
-            <Item key="remove">Remove Tab</Item>
+            <Item key="add">+</Item>
+            <Item key="remove">-</Item>
           </ActionGroup>
         </div>
       </Flex>
