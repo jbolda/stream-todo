@@ -7,6 +7,7 @@ export const addStream = thunks.create("stream:add", function* (ctx, next) {
     [name]: {
       id: name,
       title: name,
+      // TODO allow the user to set default or something?
       filename: `streams/recordings/next/${name}.txt`,
     },
   };

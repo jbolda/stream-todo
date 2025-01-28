@@ -4,6 +4,7 @@ import "./main.css";
 import App from "./view/App";
 import { initTauri } from "./app-api";
 import { type MenuItemOptions } from "@tauri-apps/api/menu";
+import { load } from "@tauri-apps/plugin-store";
 
 import { Provider } from "starfx/react";
 import { schema } from "./store/schema.ts";
@@ -46,9 +47,13 @@ const menuItems = [
 ] as MenuItemOptions[];
 const { tray } = await initTauri(menuItems);
 
+// Create a new store or load the existing one,
+const tauriStore = await load("todo-files.json");
+
 const store = setupStore({
   logs: true,
   initialState: {},
+  tauriStore,
 });
 
 const domNode = document.getElementById("root");

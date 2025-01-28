@@ -38,6 +38,7 @@
     "global-shortcut:default",
     "notification:default",
     "fs:allow-fstat",
+    "store:default",
     {
       "identifier": "fs:allow-open",
       "allow": [{ "path": "$DOCUMENT/**" }]

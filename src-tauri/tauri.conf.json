@@ -20,6 +20,7 @@
         "resizable": false,
         "title": "Stream TODO",
         "decorations": true,
+        "dragDropEnabled": false,
         "alwaysOnTop": true,
         "center": true,
         "width": 800,

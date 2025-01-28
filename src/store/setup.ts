@@ -10,7 +10,7 @@ import {
   Ok,
   Err,
   call,
-  each,
+  type IdProp,
 } from "starfx";
 import { open, writeTextFile, BaseDirectory } from "@tauri-apps/plugin-fs";
 
@@ -18,20 +18,26 @@ import {
   AppState,
   initialState as schemaInitialState,
   schema,
+  ToDo,
+  Stream,
 } from "./schema.ts";
-import { tasks, thunks } from "./thunks/index.ts";
+import { bytesToBase64, tasks, thunks } from "./thunks/index.ts";
+import { Store } from "@tauri-apps/plugin-store";
+import { todosPerStream } from "./selectors/stream.ts";
 
-const devtoolsEnabled = true;
 export function setupStore({
   logs = true,
   initialState = {},
+  tauriStore,
 }: {
   logs: boolean;
   initialState: AnyState;
+  tauriStore: Store;
 }) {
   const tauriFilePersistor = createPersistor({
     key: "tauriFile",
-    adapter: createTauriFileAdapter<AppState>(),
+    // @ts-expect-error the return type because of IdProp TS is unknown due to `arrayToObject`
+    adapter: createTauriFileAdapter<AppState>(tauriStore),
     // reconciler: reconcilerWithReconstitution,
     allowlist: ["streams", "todos"],
   });
@@ -41,7 +47,6 @@ export function setupStore({
       ...schemaInitialState,
       ...initialState,
     },
-    // TODO create custom persistStoreMdw to save partial state snapshots to specific files
     middleware: [persistStoreMdw(tauriFilePersistor)],
   });
 
@@ -79,10 +84,10 @@ export function setupStore({
   return store;
 }
 
-function createTauriFileAdapter<S>() {
+function createTauriFileAdapter<S>(tauriStore: Store) {
   const name = new Date().toISOString().split("T")[0];
-  // TODO this will end up being dynamic from the custom persistStoreMdw rewrite
-  const filename = `streams/recordings/next/${name}.txt`;
+  // TODO make this dynamic by user input
+  const defaultFileName = `streams/recordings/next/${name}.txt`;
   return {
     getItem: function* (key: string) {
       const fileOpts = {
@@ -90,28 +95,95 @@ function createTauriFileAdapter<S>() {
         create: true,
         baseDir: BaseDirectory.Document,
       };
-      try {
-        const file = yield* call(open(filename, fileOpts));
-        // TODO why isn't a thrown error shown anywhere?
-        const stat = yield* call(file.stat());
-        let buf = new Uint8Array(stat.size);
-        yield* call(file.read(buf));
-        const content = new TextDecoder().decode(buf);
-        yield* call(file.close());
 
-        const storage = content || "{}";
-        return Ok(JSON.parse(storage));
+      const fileListStore = yield* call(
+        tauriStore.get<{ files: string[] }>("files")
+      );
+      const fileList =
+        fileListStore?.files && fileListStore?.files?.length > 0
+          ? fileListStore.files
+          : [defaultFileName];
+      try {
+        const streams: Stream[] =
+          fileList.length === 0
+            ? [{ id: name, title: name, filename: defaultFileName }]
+            : fileList.map((filename) => {
+                // TODO we may not be able to split on this separater
+                const loadedFileName = filename
+                  .split("/")
+                  .pop()
+                  ?.replace(".txt", "") as string;
+                return {
+                  id: loadedFileName,
+                  title: loadedFileName,
+                  filename: filename,
+                };
+              });
+
+        const todos = [] as ToDo[];
+        for (const filename of fileList) {
+          const file = yield* call(open(filename, fileOpts));
+          // TODO why isn't a thrown error shown anywhere?
+          const stat = yield* call(file.stat());
+          let buf = new Uint8Array(stat.size);
+          yield* call(file.read(buf));
+          const wholeFileContent = new TextDecoder().decode(buf);
+          const items =
+            wholeFileContent === "" ? [] : wholeFileContent.split("\n");
+
+          for (let i = 0; i < items.length; i++) {
+            const line = items[i];
+            const [finishedAtQualifier, ...contentStrings] = line.split(": ");
+            const finishedAt =
+              finishedAtQualifier === "unfinished"
+                ? undefined
+                : finishedAtQualifier;
+            const content = contentStrings.join(": ");
+            const id = bytesToBase64(new TextEncoder().encode(content));
+            todos.push({
+              id,
+              filename,
+              content,
+              checked: !!finishedAt,
+              finishedAt,
+              nextToDo: items?.[i + 1] ? items[i + 1] : null,
+            });
+          }
+
+          yield* call(file.close());
+        }
+
+        const storage = {
+          streams: arrayToObject(streams),
+          todos: arrayToObject(todos),
+        };
+        return Ok(storage);
       } catch (err: unknown) {
         return Err(err as Error);
       }
     },
     setItem: function* (key: string, s: S) {
-      const state = JSON.stringify(s, null, 2);
-      console.log({ state });
+      // @ts-expect-error fails because of generic due to `arrayToObject`
+      const streamTodos = todosPerStream(s);
+
       try {
+        // TODO can we more directly only update files which have changed states
+        for (const streamWithTodos of streamTodos) {
+          const state = streamWithTodos.todos
+            .map(
+              (todo) => `${todo.finishedAt ?? "unfinished"}: ${todo.content}`
+            )
+            .join("\n");
+          yield* call(
+            writeTextFile(streamWithTodos.filename, state, {
+              baseDir: BaseDirectory.Document,
+            })
+          );
+        }
+
         yield* call(
-          writeTextFile(filename, state, {
-            baseDir: BaseDirectory.Document,
+          tauriStore.set("files", {
+            files: streamTodos.map((stream) => stream.filename),
           })
         );
       } catch (err: unknown) {
@@ -124,4 +196,12 @@ function createTauriFileAdapter<S>() {
       return Ok(undefined);
     },
   };
+}
+
+function arrayToObject<T extends { id: IdProp }>(inputArray: T[]) {
+  return inputArray.reduce((finalRecord, current: T) => {
+    // @ts-expect-error fine with generic keys, ignore ts error
+    finalRecord[current.id] = current;
+    return finalRecord;
+  }, {});
 }

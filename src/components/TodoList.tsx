@@ -3,50 +3,81 @@ import {
   ActionGroup,
   Button,
   ButtonGroup,
+  Checkbox,
   Form,
   Item,
   ListView,
   Text,
   TextField,
+  useDragAndDrop,
 } from "@adobe/react-spectrum";
 import Delete from "@spectrum-icons/workflow/Delete";
-import { FileOpts } from "./types";
-import { writeTextFile } from "@tauri-apps/plugin-fs";
+import {
+  getLocalTimeZone,
+  now,
+  parseAbsoluteToLocal,
+} from "@internationalized/date";
 import { useDispatch, useSelector } from "starfx/react";
-import { schema } from "../store/schema";
-import { addToDo, removeToDo, setToDoSelection } from "../store/thunks";
+import { Stream } from "../store/schema";
+import {
+  addToDo,
+  removeToDo,
+  setToDoOrder,
+  setToDoSelection,
+} from "../store/thunks";
+import { todosByStreamFilenameWithOrder } from "../store/selectors/todo";
+import { AnyState } from "starfx";
 
-type TodoItem = { id: string; content: string; checked: boolean };
-type TodoList = { items: TodoItem[] };
-
-export const Todo = ({
-  listId,
-  fileOpts,
-}: {
-  listId: string;
-  fileOpts: FileOpts;
-}) => {
+export const Todo = ({ stream }: { stream: Stream }) => {
   const dispatch = useDispatch();
-  // TODO only show todos for this tab
-  const todos = useSelector(schema.todos.selectTableAsList);
+  const todos = useSelector((s: AnyState) =>
+    todosByStreamFilenameWithOrder(s, stream.filename)
+  );
+
+  let { dragAndDropHooks } = useDragAndDrop({
+    getItems(keys) {
+      return [...keys].map((key) => {
+        let item = todos.find((todo) => todo.id === key);
+        return {
+          "custom-app-type-reorder": JSON.stringify(item),
+          "text/plain": item?.content ?? "",
+        };
+      });
+    },
+    acceptedDragTypes: ["custom-app-type-reorder"],
+    onReorder: async (e) => {
+      let { keys, target } = e;
+      dispatch(setToDoOrder({ keys, target }));
+    },
+    getAllowedDropOperations: () => ["move"],
+  });
 
   return (
     <>
       <ListView
-        selectionMode="multiple"
-        density="spacious"
+        selectionMode="single"
+        selectionStyle="highlight"
         aria-label="Async loading ListView example"
         maxWidth="size-6000"
         items={todos}
-        selectionStyle="checkbox"
-        selectedKeys={todos.flatMap((todo) => (todo.checked ? [todo.id] : []))}
-        onSelectionChange={(selection) =>
-          dispatch(setToDoSelection({ selection }))
-        }
+        overflowMode="wrap"
+        dragAndDropHooks={dragAndDropHooks}
       >
         {(item) => (
-          <Item key={item.id} textValue={item.content}>
+          <Item textValue={item.content}>
+            <Checkbox
+              aria-label="completion status"
+              isSelected={item.checked}
+              onChange={(isSelected: boolean) =>
+                dispatch(setToDoSelection({ isSelected, id: item.id }))
+              }
+            />
             <Text>{item.content}</Text>
+            {item?.finishedAt ? (
+              <Text slot="description">
+                {humanizeDuration(item.finishedAt)}
+              </Text>
+            ) : null}
             <ActionGroup
               buttonLabelBehavior="hide"
               onAction={(id) => dispatch(removeToDo({ id }))}
@@ -67,22 +98,40 @@ export const Todo = ({
         onSubmit={(event) => {
           event.preventDefault();
           const content = event?.target?.item?.value;
-          dispatch(addToDo({ content }));
+          dispatch(addToDo({ filename: stream.filename, content }));
+          event?.target?.reset();
         }}
       >
-        <TextField label="Item" name="item" isRequired id="enter-item" />
+        <TextField
+          label="Item"
+          name="item"
+          isRequired
+          id="enter-item"
+          spellCheck="true"
+        />
         <ButtonGroup>
           <Button type="submit" variant="primary">
             Add
-          </Button>
-          <Button type="reset" variant="secondary">
-            Clear
-            {
-              // TODO fix the clear
-            }
           </Button>
         </ButtonGroup>
       </Form>
     </>
   );
 };
+
+const formatDuration = new Intl.DurationFormat("en", { style: "narrow" });
+function humanizeDuration(finishedAtDateTime: string) {
+  const secondsFromDT =
+    now(getLocalTimeZone()).compare(parseAbsoluteToLocal(finishedAtDateTime)) /
+    1000;
+
+  if (secondsFromDT > 24 * 60 * 60) {
+    return `completed some time ago`;
+  } else {
+    const hours = Math.floor(secondsFromDT / 3600);
+    const minutes = Math.floor((secondsFromDT % 3600) / 60);
+    const seconds = Math.round(secondsFromDT % 60);
+    const duration = { hours, minutes, seconds };
+    return `completed ${formatDuration.format(duration)} ago`;
+  }
+}

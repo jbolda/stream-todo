@@ -1,25 +1,25 @@
 import { createSchema, slice } from "starfx";
 
+type ID = string;
 export interface Stream {
-  id: string;
+  id: ID;
   title: string;
   filename: string;
 }
 
 export interface ToDo {
-  id: string;
+  id: ID;
+  filename: string;
   content: string;
   checked: boolean;
+  finishedAt?: string;
+  nextToDo: ID | null;
 }
 
 const [schema, initialState] = createSchema({
   cache: slice.table({ empty: {} }),
   loaders: slice.loaders(),
-  streams: slice.table<Stream>({
-    initialState: {
-      default: { id: "default", title: "default", filename: "" },
-    },
-  }),
+  streams: slice.table<Stream>(),
   todos: slice.table<ToDo>(),
 });
 
