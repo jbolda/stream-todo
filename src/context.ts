@@ -7,5 +7,4 @@ export const SystemTrayContext = createContext<TauriAPIs>({
     send: async () => console.log("notifications not initialized"),
     permissionGranted: false,
   },
-  store: null,
 });

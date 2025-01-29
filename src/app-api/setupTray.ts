@@ -1,8 +1,9 @@
 import { Menu } from "@tauri-apps/api/menu";
 import { TrayIcon, TrayIconEvent } from "@tauri-apps/api/tray";
+import { defaultWindowIcon } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
-  moveWindow,
+  moveWindowConstrained,
   Position,
   handleIconState,
 } from "@tauri-apps/plugin-positioner";
@@ -21,7 +22,7 @@ export const setupTray = async ({ tooltip }: { tooltip?: string }) => {
       if (event.button === "Right") {
         await window.hide();
       } else {
-        await moveWindow(Position.TrayCenter);
+        await moveWindowConstrained(Position.TrayRight);
         await window.show().then(() => window.setFocus());
       }
     }
@@ -41,7 +42,8 @@ export const setupTray = async ({ tooltip }: { tooltip?: string }) => {
 
   const tray = await TrayIcon.new({ id: "main", action });
   if (tooltip) tray.setTooltip(tooltip);
-  await tray.setIcon("icons/icon.png");
+  const defaultIcon = await defaultWindowIcon();
+  await tray.setIcon(defaultIcon);
   const menu = await Menu.new();
   await tray.setMenu(menu);
   return menu;
