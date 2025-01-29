@@ -84,6 +84,15 @@ export function setupStore({
   return store;
 }
 
+function parseFileLine(line: string) {
+  const [finishedAtQualifier, ...contentStrings] = line.split(": ");
+  const finishedAt =
+    finishedAtQualifier === "unfinished" ? undefined : finishedAtQualifier;
+  const content = contentStrings.join(": ");
+  const id = bytesToBase64(new TextEncoder().encode(content));
+  return { id, content, finishedAt };
+}
+
 function createTauriFileAdapter<S>(tauriStore: Store) {
   const name = new Date().toISOString().split("T")[0];
   // TODO make this dynamic by user input
@@ -133,20 +142,14 @@ function createTauriFileAdapter<S>(tauriStore: Store) {
 
           for (let i = 0; i < items.length; i++) {
             const line = items[i];
-            const [finishedAtQualifier, ...contentStrings] = line.split(": ");
-            const finishedAt =
-              finishedAtQualifier === "unfinished"
-                ? undefined
-                : finishedAtQualifier;
-            const content = contentStrings.join(": ");
-            const id = bytesToBase64(new TextEncoder().encode(content));
+            const { id, content, finishedAt } = parseFileLine(line);
             todos.push({
               id,
               filename,
               content,
               checked: !!finishedAt,
               finishedAt,
-              nextToDo: items?.[i + 1] ? items[i + 1] : null,
+              nextToDo: items?.[i + 1] ? parseFileLine(items[i + 1]).id : null,
             });
           }
 
@@ -159,6 +162,7 @@ function createTauriFileAdapter<S>(tauriStore: Store) {
         };
         return Ok(storage);
       } catch (err: unknown) {
+        console.error(err);
         return Err(err as Error);
       }
     },
@@ -187,6 +191,7 @@ function createTauriFileAdapter<S>(tauriStore: Store) {
           })
         );
       } catch (err: unknown) {
+        console.error(err);
         return Err(err as Error);
       }
       return Ok(undefined);
