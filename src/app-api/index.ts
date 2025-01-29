@@ -12,7 +12,7 @@ export interface TauriAPIs {
 export async function initTauri(
   menuItems: MenuItemOptions[]
 ): Promise<TauriAPIs> {
-  const tray = await setupTray({ tooltip: "personal tray app" });
+  const tray = await setupTray({ tooltip: "stream todo app" });
 
   for (const menuItem of menuItems) {
     const item = await MenuItem.new(menuItem);
