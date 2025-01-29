@@ -100,6 +100,7 @@ export const Todo = ({ stream }: { stream: Stream }) => {
           const content = event?.target?.item?.value;
           dispatch(addToDo({ filename: stream.filename, content }));
           event?.target?.reset();
+          event?.target?.item?.focus();
         }}
       >
         <TextField

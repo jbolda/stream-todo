@@ -38,11 +38,15 @@ export const addToDo = thunks.create<{ filename: string; content: string }>(
 
     const priorExisting = allTodos.find((todo) => todo.id === todoItem.id);
     if (!priorExisting) {
-      yield* schema.update(schema.todos.add({ [todoItem.id]: todoItem }));
-      if (last?.id)
-        yield* schema.update(
-          schema.todos.patch({ [last.id]: { nextToDo: todoItem.id } })
-        );
+      const addItem = { [todoItem.id]: todoItem };
+      if (last?.id) {
+        yield* schema.update([
+          schema.todos.add(addItem),
+          schema.todos.patch({ [last.id]: { nextToDo: todoItem.id } }),
+        ]);
+      } else {
+        yield* schema.update(schema.todos.add(addItem));
+      }
     }
 
     yield* next();
@@ -82,70 +86,73 @@ export const setToDoOrder = thunks.create<{
 }>("todo:order", function* (ctx, next) {
   const { keys, target } = ctx.payload;
   const movingToDoKey = [...keys.values()].pop();
-  if (movingToDoKey === target.key || !movingToDoKey) return yield* next();
+
   const todos = yield* select(schema.todos.selectTableAsList);
-  if (target.dropPosition === "before") {
-    const aboveMovingTodo = todos.find(
-      (todo) => todo.nextToDo === movingToDoKey
-    );
-    const movingToDo = todos.find((todo) => todo.id === movingToDoKey);
-    const aboveMovedTodo = todos.find((todo) => todo.nextToDo === target.key);
-
-    if (!movingToDo) {
-      console.error("failure updating drag order");
-    } else {
-      yield* schema.update(
-        schema.todos.patch({
-          ...(!aboveMovingTodo
-            ? {}
-            : {
-                [aboveMovingTodo.id]: {
-                  nextToDo: movingToDo.nextToDo,
-                },
-              }),
-
-          [movingToDo.id]: {
-            nextToDo: target.key as string,
-          },
-
-          ...(!aboveMovedTodo
-            ? {}
-            : {
-                [aboveMovedTodo.id]: {
-                  nextToDo: movingToDo.id,
-                },
-              }),
-        })
+  if (movingToDoKey && movingToDoKey !== target.key) {
+    if (target.dropPosition === "before") {
+      const aboveMovingTodo = todos.find(
+        (todo) => todo.nextToDo === movingToDoKey
       );
-    }
-  } else if (movingToDoKey && target.dropPosition === "after") {
-    const aboveMovingTodo = todos.find(
-      (todo) => todo.nextToDo === movingToDoKey
-    );
-    const movingToDo = todos.find((todo) => todo.id === movingToDoKey);
-    const aboveMovedTodo = todos.find((todo) => todo.id === target.key);
+      const movingToDo = todos.find((todo) => todo.id === movingToDoKey);
+      const aboveMovedTodo = todos.find((todo) => todo.nextToDo === target.key);
 
-    if (!movingToDo || !aboveMovedTodo) {
-      console.error("failure updating drag order");
-    } else {
-      yield* schema.update(
-        schema.todos.patch({
-          ...(!aboveMovingTodo
-            ? {}
-            : {
-                [aboveMovingTodo.id]: {
-                  nextToDo: movingToDo.nextToDo,
-                },
-              }),
-          [movingToDo.id]: {
-            nextToDo: aboveMovedTodo.nextToDo,
-          },
-          [target.key]: {
-            nextToDo: movingToDo.id,
-          },
-        })
+      if (!movingToDo) {
+        console.error("failure updating drag order");
+      } else if (movingToDo.nextToDo !== target.key) {
+        yield* schema.update(
+          schema.todos.patch({
+            ...(!aboveMovingTodo
+              ? {}
+              : {
+                  [aboveMovingTodo.id]: {
+                    nextToDo: movingToDo.nextToDo,
+                  },
+                }),
+
+            [movingToDo.id]: {
+              nextToDo: target.key as string,
+            },
+
+            ...(!aboveMovedTodo
+              ? {}
+              : {
+                  [aboveMovedTodo.id]: {
+                    nextToDo: movingToDo.id,
+                  },
+                }),
+          })
+        );
+      }
+    } else if (target.dropPosition === "after") {
+      const aboveMovingTodo = todos.find(
+        (todo) => todo.nextToDo === movingToDoKey
       );
+      const movingToDo = todos.find((todo) => todo.id === movingToDoKey);
+      const aboveMovedTodo = todos.find((todo) => todo.id === target.key);
+
+      if (!movingToDo || !aboveMovedTodo) {
+        console.error("failure updating drag order");
+      } else {
+        yield* schema.update(
+          schema.todos.patch({
+            ...(!aboveMovingTodo
+              ? {}
+              : {
+                  [aboveMovingTodo.id]: {
+                    nextToDo: movingToDo.nextToDo,
+                  },
+                }),
+            [movingToDo.id]: {
+              nextToDo: aboveMovedTodo.nextToDo,
+            },
+            [target.key]: {
+              nextToDo: movingToDo.id,
+            },
+          })
+        );
+      }
     }
   }
+
   yield* next();
 });
