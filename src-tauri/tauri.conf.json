@@ -19,13 +19,13 @@
         "fullscreen": false,
         "resizable": false,
         "title": "Stream TODO",
-        "decorations": false,
+        "decorations": true,
         "dragDropEnabled": false,
         "alwaysOnTop": true,
         "center": true,
         "width": 800,
         "height": 1200,
-        "visible": false
+        "visible": true
       }
     ]
   },

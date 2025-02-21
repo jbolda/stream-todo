@@ -48,7 +48,7 @@ const menuItems = [
 const { tray } = await initTauri(menuItems);
 
 // Create a new store or load the existing one,
-const tauriStore = await Store.load("todo-files.json");
+const tauriStore = await Store.load("todo-files-live.json");
 const store = setupStore({
   logs: true,
   initialState: {},
