@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActionGroup,
   Button,
@@ -16,9 +16,10 @@ import {
   getLocalTimeZone,
   now,
   parseAbsoluteToLocal,
+  ZonedDateTime,
 } from "@internationalized/date";
 import { useDispatch, useSelector } from "starfx/react";
-import { Stream } from "../store/schema";
+import type { Stream } from "../store/schema";
 import {
   addToDo,
   removeToDo,
@@ -26,13 +27,31 @@ import {
   setToDoSelection,
 } from "../store/thunks";
 import { todosByStreamFilenameWithOrder } from "../store/selectors/todo";
-import { AnyState } from "starfx";
+import type { AnyState } from "starfx";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { getDuration } from "../store/utils";
 
 export const Todo = ({ stream }: { stream: Stream }) => {
   const dispatch = useDispatch();
   const todos = useSelector((s: AnyState) =>
     todosByStreamFilenameWithOrder(s, stream.filename)
   );
+  const [rightNow, setRightNow] = useState(now(getLocalTimeZone()));
+  const todosWithCurrentTime = todos.map((todo) => ({ ...todo, rightNow }));
+
+  useEffect(() => {
+    async function windowFocusStateChange() {
+      const window = getCurrentWindow();
+      const unlisten = await window.onFocusChanged(({ payload: focused }) => {
+        setRightNow((state) => {
+          return now(getLocalTimeZone());
+        });
+      });
+      return unlisten;
+    }
+    windowFocusStateChange();
+    return () => {};
+  }, []);
 
   let { dragAndDropHooks } = useDragAndDrop({
     getItems(keys) {
@@ -59,7 +78,7 @@ export const Todo = ({ stream }: { stream: Stream }) => {
         selectionStyle="highlight"
         aria-label="Async loading ListView example"
         maxWidth="size-6000"
-        items={todos}
+        items={todosWithCurrentTime}
         overflowMode="wrap"
         dragAndDropHooks={dragAndDropHooks}
       >
@@ -75,7 +94,7 @@ export const Todo = ({ stream }: { stream: Stream }) => {
             <Text>{item.content}</Text>
             {item?.finishedAt ? (
               <Text slot="description">
-                {humanizeDuration(item.finishedAt)}
+                {humanizeDuration(rightNow, item.finishedAt)}
               </Text>
             ) : null}
             <ActionGroup
@@ -121,18 +140,16 @@ export const Todo = ({ stream }: { stream: Stream }) => {
 };
 
 const formatDuration = new Intl.DurationFormat("en", { style: "narrow" });
-function humanizeDuration(finishedAtDateTime: string) {
+function humanizeDuration(rightNow: ZonedDateTime, finishedAtDateTime: string) {
   const secondsFromDT =
-    now(getLocalTimeZone()).compare(parseAbsoluteToLocal(finishedAtDateTime)) /
-    1000;
+    rightNow.compare(parseAbsoluteToLocal(finishedAtDateTime)) / 1000;
 
-  if (secondsFromDT > 24 * 60 * 60) {
+  if (secondsFromDT <= 0) {
+    return `completed a moment ago`;
+  } else if (secondsFromDT > 24 * 60 * 60) {
     return `completed some time ago`;
   } else {
-    const hours = Math.floor(secondsFromDT / 3600);
-    const minutes = Math.floor((secondsFromDT % 3600) / 60);
-    const seconds = Math.round(secondsFromDT % 60);
-    const duration = { hours, minutes, seconds };
+    const duration = getDuration(secondsFromDT);
     return `completed ${formatDuration.format(duration)} ago`;
   }
 }
