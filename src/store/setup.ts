@@ -181,7 +181,7 @@ function createTauriFileAdapter<S>(tauriStore: Store) {
             const allSeconds = parseAbsoluteToLocal(finishedAt).compare(
               parseAbsoluteToLocal(fromTime)
             );
-            const duration = getDuration(allSeconds);
+            const duration = getDuration(allSeconds / 1000);
             return `|${duration.hours
               .toString()
               .padStart(2, "0")}:${duration.minutes
