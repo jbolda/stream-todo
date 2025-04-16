@@ -25,7 +25,7 @@
         "center": true,
         "width": 800,
         "height": 1200,
-        "visible": false
+        "visible": true
       }
     ]
   },

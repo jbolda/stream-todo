@@ -11,30 +11,30 @@ import { schema } from "./store/schema.ts";
 import { setupStore } from "./store/setup.ts";
 
 // https://github.com/tauri-apps/wry/issues/30#issuecomment-1061465700
-function disableMenu() {
-  if (window.location.hostname !== "tauri.localhost") {
-    return;
-  }
+// function disableMenu() {
+//   if (window.location.hostname !== "tauri.localhost") {
+//     return;
+//   }
 
-  document.addEventListener(
-    "contextmenu",
-    (e) => {
-      e.preventDefault();
-      return false;
-    },
-    { capture: true }
-  );
+//   document.addEventListener(
+//     "contextmenu",
+//     (e) => {
+//       e.preventDefault();
+//       return false;
+//     },
+//     { capture: true }
+//   );
 
-  document.addEventListener(
-    "selectstart",
-    (e) => {
-      e.preventDefault();
-      return false;
-    },
-    { capture: true }
-  );
-}
-disableMenu();
+//   document.addEventListener(
+//     "selectstart",
+//     (e) => {
+//       e.preventDefault();
+//       return false;
+//     },
+//     { capture: true }
+//   );
+// }
+// disableMenu();
 
 const menuItems = [
   // {
@@ -55,7 +55,28 @@ const store = setupStore({
   tauriStore,
 });
 
+const duration = {
+  hours: 1,
+  minutes: 46,
+  seconds: 40,
+};
+
+// With style set to "long" and locale "fr-FR"
+const a = new Intl.DurationFormat("fr-FR", { style: "long" }).format(duration);
+// "1 heure, 46 minutes et 40 secondes"
+console.log(a);
+// With style set to "short" and locale "en"
+const b = new Intl.DurationFormat("en", { style: "short" }).format(duration);
+// "1 hr, 46 min and 40 sec"
+console.log(b);
+
+// With style set to "narrow" and locale "pt"
+const c = new Intl.DurationFormat("pt", { style: "narrow" }).format(duration);
+// "1h 46min 40s"
+console.log(c);
+
 const domNode = document.getElementById("root");
+// if (domNode) createRoot(domNode).render(<div>hello world</div>);
 if (domNode)
   createRoot(domNode).render(
     <Provider schema={schema} store={store}>

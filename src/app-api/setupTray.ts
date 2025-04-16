@@ -15,9 +15,9 @@ export const setupTray = async ({ tooltip }: { tooltip?: string }) => {
       const window = getCurrentWindow();
       // The mini-pop-up window should automatically
       //  hide once you stop giving it focus
-      await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
-        if (!focused) window.hide();
-      });
+      // await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+      //   if (!focused) window.hide();
+      // });
 
       if (event.button === "Right") {
         await window.hide();
