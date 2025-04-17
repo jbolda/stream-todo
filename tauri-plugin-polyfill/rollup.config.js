@@ -1,8 +1,8 @@
-import { readFileSync } from "fs";
-import { join } from "path";
-import { cwd } from "process";
-import typescript from "@rollup/plugin-typescript";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { cwd } from "node:process";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
+import typescript from "@rollup/plugin-typescript";
 import terser from "@rollup/plugin-terser";
 
 const pkg = JSON.parse(readFileSync(join(cwd(), "package.json"), "utf8"));
@@ -16,18 +16,18 @@ export default [
     output: [
       {
         file: pkg.exports.import,
-        format: "esm",
+        format: 'esm'
       },
       {
         file: pkg.exports.require,
-        format: "cjs",
-      },
+        format: 'cjs'
+      }
     ],
     plugins: [
       typescript({
         declaration: true,
-        declarationDir: `./${pkg.exports.import.split("/")[0]}`,
-      }),
+        declarationDir: dirname(pkg.exports.import)
+      })
     ],
     external: [
       /^@tauri-apps\/api/,
