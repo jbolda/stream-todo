@@ -10,7 +10,7 @@ fn main() {
   // #[cfg(not(debug_assertions))]
   // let builder = tauri::Builder::default();
 
-  set_verso_devtools_port(5333);
+  set_verso_devtools_port(1234);
 
   tauri::Builder::<VersoRuntime>::new()
     // builder

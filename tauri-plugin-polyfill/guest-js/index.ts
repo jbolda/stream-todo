@@ -1,2 +1,1 @@
-import "@formatjs/intl-durationformat/polyfill";
-console.log("hello from file");
+import "@formatjs/intl-durationformat/polyfill-force";

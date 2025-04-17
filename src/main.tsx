@@ -9,7 +9,6 @@ import { Store } from "@tauri-apps/plugin-store";
 import { Provider } from "starfx/react";
 import { schema } from "./store/schema.ts";
 import { setupStore } from "./store/setup.ts";
-
 // https://github.com/tauri-apps/wry/issues/30#issuecomment-1061465700
 // function disableMenu() {
 //   if (window.location.hostname !== "tauri.localhost") {
