@@ -1,8 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-#[cfg(debug_assertions)]
+// #[cfg(debug_assertions)]
 // use tauri::Manager;
-use tauri_runtime_verso::{set_verso_devtools_port, VersoRuntime, INVOKE_SYSTEM_SCRIPTS};
+use tauri_runtime_verso::set_verso_devtools_port;
 
 fn main() {
   // #[cfg(debug_assertions)]
@@ -12,7 +12,8 @@ fn main() {
 
   set_verso_devtools_port(1234);
 
-  tauri::Builder::<VersoRuntime>::new()
+  // tauri::Builder::<VersoRuntime>::new()
+  tauri_runtime_verso::builder()
     // builder
     //   .setup(|_app| {
     //     #[cfg(debug_assertions)]
@@ -22,7 +23,6 @@ fn main() {
     //     }
     //     Ok(())
     //   })
-    .invoke_system(INVOKE_SYSTEM_SCRIPTS.to_owned())
     .plugin(tauri_plugin_polyfill::init())
     .plugin(tauri_plugin_global_shortcut::Builder::new().build())
     .plugin(tauri_plugin_fs::init())
