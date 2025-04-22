@@ -9,6 +9,6 @@
     "noImplicitAny": true,
     "noEmit": true
   },
-  "include": ["guest-js/*.ts"],
+  "include": ["polyfill-scripts/*.ts"],
   "exclude": ["dist-js", "node_modules"]
 }
