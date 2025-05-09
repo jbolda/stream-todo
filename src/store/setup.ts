@@ -24,6 +24,8 @@ import {
 import { bytesToBase64, tasks, thunks } from "./thunks/index.ts";
 import { Store } from "@tauri-apps/plugin-store";
 import { todosPerStream } from "./selectors/stream.ts";
+import { parseAbsoluteToLocal } from "@internationalized/date";
+import { getDuration } from "./utils.ts";
 
 export function setupStore({
   logs = true,
@@ -86,11 +88,12 @@ export function setupStore({
 
 function parseFileLine(line: string) {
   const [finishedAtQualifier, ...contentStrings] = line.split(": ");
-  const finishedAt =
-    finishedAtQualifier === "unfinished" ? undefined : finishedAtQualifier;
+  const finished = finishedAtQualifier.startsWith("unfinished")
+    ? []
+    : finishedAtQualifier.split("|");
   const content = contentStrings.join(": ");
   const id = bytesToBase64(new TextEncoder().encode(content));
-  return { id, content, finishedAt };
+  return { id, content, finishedAt: finished?.[0] };
 }
 
 function createTauriFileAdapter<S>(tauriStore: Store) {
@@ -173,9 +176,28 @@ function createTauriFileAdapter<S>(tauriStore: Store) {
       try {
         // TODO can we more directly only update files which have changed states
         for (const streamWithTodos of streamTodos) {
+          const start = streamWithTodos.todos[0].finishedAt;
+          const timeFromState = (finishedAt: string, fromTime: string) => {
+            const allSeconds = parseAbsoluteToLocal(finishedAt).compare(
+              parseAbsoluteToLocal(fromTime)
+            );
+            const duration = getDuration(allSeconds / 1000);
+            return `|${duration.hours
+              .toString()
+              .padStart(2, "0")}:${duration.minutes
+              .toString()
+              .padStart(2, "0")}:${duration.seconds
+              .toString()
+              .padStart(2, "0")}`;
+          };
           const state = streamWithTodos.todos
             .map(
-              (todo) => `${todo.finishedAt ?? "unfinished"}: ${todo.content}`
+              (todo) =>
+                `${todo.finishedAt ?? "unfinished"}${
+                  start && todo?.finishedAt
+                    ? timeFromState(todo.finishedAt, start)
+                    : ""
+                }: ${todo.content}`
             )
             .join("\n");
           yield* call(
