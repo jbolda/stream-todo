@@ -13,6 +13,7 @@ export interface ToDo {
   content: string;
   checked: boolean;
   finishedAt?: string;
+  timecode?: string;
   nextToDo: ID | null;
 }
 

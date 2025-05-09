@@ -1,5 +1,6 @@
 import {
   createSignal,
+  each,
   once,
   race,
   resource,
@@ -9,6 +10,7 @@ import {
   Ok,
   suspend,
   call,
+  sleep,
 } from "effection";
 import type { Operation, Stream, Result } from "effection";
 import {
@@ -34,12 +36,12 @@ export interface WebSocketResource<T>
   /**
    * the type of data that this websocket accepts
    */
-  readonly binaryType: BinaryType;
-  readonly bufferedAmmount: number;
-  readonly extensions: string;
-  readonly protocol: string;
-  readonly readyState: number;
-  readonly url: string;
+  // readonly binaryType: BinaryType;
+  // readonly bufferedAmmount: number;
+  // readonly extensions: string;
+  // readonly protocol: string;
+  // readonly readyState: number;
+  // readonly url: string;
   send(data: WebSocketData): void;
 }
 
@@ -118,120 +120,72 @@ export function useWebSocket<T>(
   url: string | (() => WebSocket),
   password?: string,
   protocols?: string
-): Operation<WebSocketResource<T>> {
+) {
+  //}: Operation<WebSocketResource<T>> {
+  console.log("websocket registered");
   return resource(function* (provide) {
+    console.log("websocket init");
     let socket =
       typeof url === "string" ? new WebSocket(url, protocols) : url();
 
-    let messages = createSignal<MessageEvent<T>, CloseEvent>();
-    let { operation: closed, resolve: close } = withResolvers<CloseEvent>();
-    socket.addEventListener("error", (error) => {
-      console.log("error event listener triggered");
-      console.error(error);
+    yield* spawn(function* () {
+      throw yield* once(socket, "error");
+    });
+
+    socket.addEventListener("open", (open) => {
+      console.log({ open });
     });
     socket.addEventListener("close", (error) => {
       console.log("close event listener triggered");
       console.error(error);
     });
-    yield* once(socket, "open");
-
-    // https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md#connection-steps
-    let d: Record<string, string>;
-    socket.addEventListener("message", (message) => {
+    let lastMessageReceived: Record<string, string>;
+    socket.addEventListener("message", async (message) => {
       console.log(JSON.parse(message.data));
       if (message.data) {
-        const data = JSON.parse(message.data);
-        d = data.d;
+        const incoming = JSON.parse(message.data);
+        if (incoming?.op === WebSocketOpCode.Hello) {
+          const data = {
+            rpcVersion: incoming.d.rpcVersion,
+            authentication: undefined as string | undefined,
+          };
+          if (password) {
+            data.authentication = await authenticationHashing(
+              incoming.d.authentication.salt,
+              incoming.d.authentication.challenge,
+              password
+            );
+          }
+          const handshake: OutgoingMessage = {
+            op: WebSocketOpCode.Identify,
+            d: data,
+          };
+          socket.send(JSON.stringify(handshake));
+        } else if (incoming?.op === WebSocketOpCode.Identified) {
+          console.log("successfully indentified and connected!");
+        }
+        lastMessageReceived = incoming;
       }
-      messages.send(message);
-    });
-    // https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md#hello-opcode-0
-    // wait for hello with op 0
-    yield* once(socket, "message");
-    console.log({ d });
-    // const hello = await this.createConnection(url);
-    // this.emit('Hello', hello);
-    //  this.identify(hello, password, identificationParams);
-    const data = {
-      rpcVersion: d.rpcVersion,
-      authentication: undefined as string | undefined,
-    };
-    if (password) {
-      data.authentication = yield* authenticationHashing(
-        d.authentication.salt,
-        d.authentication.challenge,
-        password
-      );
-    }
-    const handshake: OutgoingMessage = {
-      op: WebSocketOpCode.Identify,
-      d: data,
-    };
-    console.log({ handshake });
-    // https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md#identify-opcode-1
-    // send indentify with op 1
-    yield* call(() => socket.send(JSON.stringify(handshake)));
-
-    yield* once(socket, "message");
-
-    const t: OutgoingMessage = {
-      op: WebSocketOpCode.Request,
-      d: {
-        requestType: "GetStreamStatus",
-        requestId: "f819dcf0-89cc-11eb-8f0e-382c4ac93b9c",
-      },
-    };
-    const streamStatusResponse = yield* call(() =>
-      socket.send(JSON.stringify(t))
-    );
-    // yield* spawn(function* () {
-    //   throw yield* once(socket, "error");
-    // });
-
-    yield* spawn(function* () {
-      let subscription = yield* messages;
-      let next = yield* subscription.next();
-      while (!next.done) {
-        next = yield* subscription.next();
-      }
-      close(next.value);
     });
 
     try {
-      socket.addEventListener("message", messages.send);
-      socket.addEventListener("close", messages.close);
-
-      yield* race([
-        closed,
-        provide({
-          get binaryType() {
-            return socket.binaryType;
-          },
-          get bufferedAmmount() {
-            return socket.bufferedAmount;
-          },
-          get extensions() {
-            return socket.extensions;
-          },
-          get protocol() {
-            return socket.protocol;
-          },
-          get readyState() {
-            return socket.readyState;
-          },
-          get url() {
-            return socket.url;
-          },
-          send: (data) => socket.send(data),
-          [Symbol.iterator]: messages[Symbol.iterator],
-        }),
-      ]);
+      // yield* provide(socket);
+      yield* provide({
+        socket,
+        *send(d) {
+          // this sucks but the effection ways to do it seem to not
+          //  be working with the version we have and it isn't worth
+          //  fixing as we are working to upgrade the version anyways
+          socket.send(d);
+          yield* sleep(250);
+          // yield* response;
+          return lastMessageReceived;
+        },
+      });
     } finally {
-      console.log("finally");
       socket.close(1000, "released");
-      yield* closed;
-      socket.removeEventListener("message", messages.send);
-      socket.removeEventListener("close", messages.close);
+      socket.removeEventListener("message", console.log);
+      socket.removeEventListener("close", console.log);
     }
   });
 }
@@ -240,60 +194,3 @@ export function useWebSocket<T>(
  * @ignore
  */
 export type WebSocketData = Parameters<WebSocket["send"]>[0];
-
-export interface WithResolvers<T> {
-  operation: Operation<T>;
-  resolve(value: T): void;
-  reject(error: Error): void;
-}
-
-export function withResolvers<T>(): WithResolvers<T> {
-  let subscribers: Set<Resolver<T>> = new Set();
-  let settlement: Result<T> | undefined = undefined;
-  let operation = action<T>(function* (resolve, reject) {
-    let resolver = { resolve, reject };
-    if (settlement) {
-      notify(settlement, resolver);
-    } else {
-      try {
-        subscribers.add(resolver);
-        yield* suspend();
-      } finally {
-        subscribers.delete(resolver);
-      }
-    }
-  });
-
-  let settle = (result: Result<T>) => {
-    if (!settlement) {
-      settlement = result;
-      settle = () => {};
-    }
-    for (let subscriber of subscribers) {
-      subscribers.delete(subscriber);
-      notify(settlement, subscriber);
-    }
-  };
-
-  let resolve = (value: T) => {
-    settle(Ok(value));
-  };
-  let reject = (error: Error) => {
-    settle(Err(error));
-  };
-
-  return { operation, resolve, reject };
-}
-
-interface Resolver<T> {
-  resolve(value: T): void;
-  reject(error: Error): void;
-}
-
-function notify<T>(result: Result<T>, resolver: Resolver<T>): void {
-  if (result.ok) {
-    resolver.resolve(result.value);
-  } else {
-    resolver.reject(result.error);
-  }
-}

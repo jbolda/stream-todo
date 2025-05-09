@@ -96,7 +96,7 @@ function parseFileLine(line: string) {
 function createTauriFileAdapter<S>(tauriStore: Store) {
   const name = new Date().toISOString().split("T")[0];
   // TODO make this dynamic by user input
-  const defaultFileName = `streams/recordings/next/${name}-live.txt`;
+  const defaultFileName = `streams/recordings/next/${name}-dev.txt`;
   return {
     getItem: function* (key: string) {
       const fileOpts = {
@@ -106,7 +106,7 @@ function createTauriFileAdapter<S>(tauriStore: Store) {
       };
 
       const fileListStore = yield* call(
-        tauriStore.get<{ files: string[] }>("files")
+        tauriStore.get<{ files: string[] }>("files-dev")
       );
       const fileList =
         fileListStore?.files && fileListStore?.files?.length > 0

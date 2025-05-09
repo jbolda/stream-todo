@@ -21,7 +21,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   }
   return btoa(binary);
 }
-export function* authenticationHashing(
+export function* authenticationHashing2(
   salt: string,
   challenge: string,
   msg: string
@@ -31,6 +31,17 @@ export function* authenticationHashing(
   const encodedAgain = yield* call(() =>
     digestMessage(base64Secret + challenge)
   );
+  return arrayBufferToBase64(encodedAgain);
+}
+export async function authenticationHashing(
+  salt: string,
+  challenge: string,
+  msg: string
+) {
+  const encoded = await digestMessage(msg + salt);
+  const base64Secret = arrayBufferToBase64(encoded);
+  const encodedAgain = await digestMessage(base64Secret + challenge);
+
   return arrayBufferToBase64(encodedAgain);
 }
 
