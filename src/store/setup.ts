@@ -93,7 +93,7 @@ function parseFileLine(line: string) {
     : finishedAtQualifier.split("|");
   const content = contentStrings.join(": ");
   const id = bytesToBase64(new TextEncoder().encode(content));
-  return { id, content, finishedAt: finished?.[0] };
+  return { id, content, finishedAt: finished?.[0], timecode: finished?.[2] };
 }
 
 function createTauriFileAdapter<S>(tauriStore: Store) {
@@ -145,13 +145,14 @@ function createTauriFileAdapter<S>(tauriStore: Store) {
 
           for (let i = 0; i < items.length; i++) {
             const line = items[i];
-            const { id, content, finishedAt } = parseFileLine(line);
+            const { id, content, finishedAt, timecode } = parseFileLine(line);
             todos.push({
               id,
               filename,
               content,
               checked: !!finishedAt,
               finishedAt,
+              timecode,
               nextToDo: items?.[i + 1] ? parseFileLine(items[i + 1]).id : null,
             });
           }
@@ -197,7 +198,7 @@ function createTauriFileAdapter<S>(tauriStore: Store) {
                   start && todo?.finishedAt
                     ? timeFromState(todo.finishedAt, start)
                     : ""
-                }: ${todo.content}`
+                }${todo.timecode ? `|${todo.timecode}` : ``}: ${todo.content}`
             )
             .join("\n");
           yield* call(
