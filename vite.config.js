@@ -7,13 +7,4 @@ export default defineConfig({
     target: "esnext", //browsers can handle the latest ES features
   },
   plugins: [react()],
-  optimizeDeps: {
-    exclude: ["starfx"],
-    include: [
-      "starfx > effection",
-      "starfx > immer",
-      "starfx > react-redux",
-      "starfx > reselect",
-    ],
-  },
 });

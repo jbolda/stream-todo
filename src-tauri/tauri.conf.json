@@ -10,7 +10,9 @@
   },
   "app": {
     "security": {
-      "csp": "default-src blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline' 'self' img-src: 'self'; connect-src ipc: http://ipc.localhost ipc: http://ipc.localhost ipc: http://ipc.localhost"
+      "csp": {
+        "connect-src": " 'self' ws: ipc: http://ipc.localhost"
+      }
     },
     "trayIcon": null,
     "windows": [
@@ -19,13 +21,13 @@
         "fullscreen": false,
         "resizable": false,
         "title": "Stream TODO",
-        "decorations": true,
+        "decorations": false,
         "dragDropEnabled": false,
         "alwaysOnTop": true,
         "center": true,
         "width": 800,
         "height": 1200,
-        "visible": true
+        "visible": false
       }
     ]
   },

@@ -9,6 +9,7 @@ import { Store } from "@tauri-apps/plugin-store";
 import { Provider } from "starfx/react";
 import { schema } from "./store/schema.ts";
 import { setupStore } from "./store/setup.ts";
+import { STORE_FILE_LIST_DB } from "./config.ts";
 
 // https://github.com/tauri-apps/wry/issues/30#issuecomment-1061465700
 function disableMenu() {
@@ -48,7 +49,7 @@ const menuItems = [
 const { tray } = await initTauri(menuItems);
 
 // Create a new store or load the existing one,
-const tauriStore = await Store.load("todo-files-live.json");
+const tauriStore = await Store.load(STORE_FILE_LIST_DB);
 const store = setupStore({
   logs: true,
   initialState: {},

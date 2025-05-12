@@ -26,6 +26,7 @@ import { Store } from "@tauri-apps/plugin-store";
 import { todosPerStream } from "./selectors/stream.ts";
 import { parseAbsoluteToLocal } from "@internationalized/date";
 import { getDuration } from "./utils.ts";
+import { setDefaultFileName, STORE_FILE_LIST } from "../config.ts";
 
 export function setupStore({
   logs = true,
@@ -99,7 +100,7 @@ function parseFileLine(line: string) {
 function createTauriFileAdapter<S>(tauriStore: Store) {
   const name = new Date().toISOString().split("T")[0];
   // TODO make this dynamic by user input
-  const defaultFileName = `streams/recordings/next/${name}-dev.txt`;
+  const defaultFileName = setDefaultFileName(name);
   return {
     getItem: function* (key: string) {
       const fileOpts = {
@@ -109,7 +110,7 @@ function createTauriFileAdapter<S>(tauriStore: Store) {
       };
 
       const fileListStore = yield* call(
-        tauriStore.get<{ files: string[] }>("files-dev")
+        tauriStore.get<{ files: string[] }>(STORE_FILE_LIST)
       );
       const fileList =
         fileListStore?.files && fileListStore?.files?.length > 0
