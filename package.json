@@ -3,10 +3,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --force",
     "build": "vite build",
     "serve": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@adobe/react-spectrum": "^3.38.1",
@@ -25,9 +26,11 @@
     "@tauri-apps/cli": "^2.2.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^4.4.1",
+    "patch-package": "^8.0.0",
+    "type-fest": "^4.34.1",
     "typescript": "^5.7.2",
-    "vite": "^6.0.7"
+    "vite": "^6.3.3"
   },
   "volta": {
     "node": "22.12.0",

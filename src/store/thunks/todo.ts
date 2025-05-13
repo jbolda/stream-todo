@@ -67,6 +67,20 @@ export const setToDoSelection = thunks.create<{
   id: string;
 }>("todo:selection", function* (ctx, next) {
   const { isSelected, id } = ctx.payload;
+  let timecode = undefined;
+  if (isSelected) {
+    const socket = ctx.resources["obs-websocket"];
+    const status = yield* socket.send(
+      JSON.stringify({
+        op: 6,
+        d: {
+          requestType: "GetRecordStatus",
+          requestId: "f819dcf0-89cc-11eb-8f0e-382c4ac93b9c",
+        },
+      })
+    );
+    timecode = status?.d?.responseData?.outputTimecode;
+  }
   yield* schema.update(
     schema.todos.patch({
       [id]: {
@@ -74,6 +88,7 @@ export const setToDoSelection = thunks.create<{
         finishedAt: isSelected
           ? now(getLocalTimeZone()).toAbsoluteString()
           : undefined,
+        timecode: isSelected && timecode ? timecode : undefined,
       },
     })
   );

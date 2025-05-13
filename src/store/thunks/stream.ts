@@ -1,3 +1,4 @@
+import { setDefaultFileName } from "../../config.ts";
 import { schema } from "../schema.ts";
 import { thunks } from "./foundation.ts";
 
@@ -8,7 +9,7 @@ export const addStream = thunks.create("stream:add", function* (ctx, next) {
       id: name,
       title: name,
       // TODO allow the user to set default or something?
-      filename: `streams/recordings/next/${name}.txt`,
+      filename: setDefaultFileName(name),
     },
   };
 

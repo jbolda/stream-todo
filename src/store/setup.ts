@@ -26,6 +26,7 @@ import { Store } from "@tauri-apps/plugin-store";
 import { todosPerStream } from "./selectors/stream.ts";
 import { parseAbsoluteToLocal } from "@internationalized/date";
 import { getDuration } from "./utils.ts";
+import { setDefaultFileName, STORE_FILE_LIST } from "../config.ts";
 
 export function setupStore({
   logs = true,
@@ -93,13 +94,13 @@ function parseFileLine(line: string) {
     : finishedAtQualifier.split("|");
   const content = contentStrings.join(": ");
   const id = bytesToBase64(new TextEncoder().encode(content));
-  return { id, content, finishedAt: finished?.[0] };
+  return { id, content, finishedAt: finished?.[0], timecode: finished?.[2] };
 }
 
 function createTauriFileAdapter<S>(tauriStore: Store) {
   const name = new Date().toISOString().split("T")[0];
   // TODO make this dynamic by user input
-  const defaultFileName = `streams/recordings/next/${name}.txt`;
+  const defaultFileName = setDefaultFileName(name);
   return {
     getItem: function* (key: string) {
       const fileOpts = {
@@ -109,7 +110,7 @@ function createTauriFileAdapter<S>(tauriStore: Store) {
       };
 
       const fileListStore = yield* call(
-        tauriStore.get<{ files: string[] }>("files")
+        tauriStore.get<{ files: string[] }>(STORE_FILE_LIST)
       );
       const fileList =
         fileListStore?.files && fileListStore?.files?.length > 0
@@ -145,13 +146,14 @@ function createTauriFileAdapter<S>(tauriStore: Store) {
 
           for (let i = 0; i < items.length; i++) {
             const line = items[i];
-            const { id, content, finishedAt } = parseFileLine(line);
+            const { id, content, finishedAt, timecode } = parseFileLine(line);
             todos.push({
               id,
               filename,
               content,
               checked: !!finishedAt,
               finishedAt,
+              timecode,
               nextToDo: items?.[i + 1] ? parseFileLine(items[i + 1]).id : null,
             });
           }
@@ -197,7 +199,7 @@ function createTauriFileAdapter<S>(tauriStore: Store) {
                   start && todo?.finishedAt
                     ? timeFromState(todo.finishedAt, start)
                     : ""
-                }: ${todo.content}`
+                }${todo.timecode ? `|${todo.timecode}` : ``}: ${todo.content}`
             )
             .join("\n");
           yield* call(

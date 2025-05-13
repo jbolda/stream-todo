@@ -7,6 +7,7 @@ import {
   Position,
   handleIconState,
 } from "@tauri-apps/plugin-positioner";
+import { autoHideOnFocus } from "../config";
 
 export const setupTray = async ({ tooltip }: { tooltip?: string }) => {
   const action = async (event: TrayIconEvent) => {
@@ -15,9 +16,11 @@ export const setupTray = async ({ tooltip }: { tooltip?: string }) => {
       const window = getCurrentWindow();
       // The mini-pop-up window should automatically
       //  hide once you stop giving it focus
-      await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
-        if (!focused) window.hide();
-      });
+      if (autoHideOnFocus) {
+        await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+          if (!focused) window.hide();
+        });
+      }
 
       if (event.button === "Right") {
         await window.hide();

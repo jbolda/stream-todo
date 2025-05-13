@@ -1,0 +1,110 @@
+diff --git a/node_modules/starfx/esm/query/thunk.d.ts b/node_modules/starfx/esm/query/thunk.d.ts
+index b814f9c..e1a8b89 100644
+--- a/node_modules/starfx/esm/query/thunk.d.ts
++++ b/node_modules/starfx/esm/query/thunk.d.ts
+@@ -3,6 +3,7 @@ import type { Payload } from "../types.js";
+ import type { CreateAction, CreateActionWithPayload, Middleware, MiddlewareCo, Supervisor, ThunkCtx } from "./types.js";
+ export interface ThunksApi<Ctx extends ThunkCtx> {
+     use: (fn: Middleware<Ctx>) => void;
++    manage: (key:string,fn: any) => void;
+     routes: () => Middleware<Ctx>;
+     bootup: Callable<void>;
+     register: Callable<void>;
+diff --git a/node_modules/starfx/esm/query/thunk.js b/node_modules/starfx/esm/query/thunk.js
+index 2151b0c..4be5de3 100644
+--- a/node_modules/starfx/esm/query/thunk.js
++++ b/node_modules/starfx/esm/query/thunk.js
+@@ -46,10 +46,13 @@ export function createThunks({ supervisor = takeEvery, } = { supervisor: takeEve
+     const middleware = [];
+     const visors = {};
+     const middlewareMap = {};
++    const resources = []
++    const resourceMap = {};
+     let dynamicMiddlewareMap = {};
+     const actionMap = {};
+     const thunkId = id++;
+     const storeMap = new Map();
++    console.log('hello from esm after a vite.config.js change')
+     function* defaultMiddleware(_, next) {
+         yield* next();
+     }
+@@ -61,6 +64,7 @@ export function createThunks({ supervisor = takeEvery, } = { supervisor: takeEve
+             action,
+             name,
+             key,
++            resources: resourceMap,
+             payload: options,
+             actionFn,
+             result: Ok(undefined),
+@@ -148,6 +152,7 @@ export function createThunks({ supervisor = takeEvery, } = { supervisor: takeEve
+         yield* supervise(action.payload)();
+     }
+     function* register() {
++        // TODO add an effection context which would be available in the middlewares
+         storeId = yield* IdContext;
+         if (storeId && storeMap.has(storeId)) {
+             console.warn("This thunk instance is already registered.");
+@@ -160,10 +165,21 @@ export function createThunks({ supervisor = takeEvery, } = { supervisor: takeEve
+                 storeMap.delete(storeId);
+             }
+         });
++        // perhaps register any of the `.manage()` as another task or thing to be watched
++        console.log('right before keep alive')
+         // Register any thunks created after signal is available
++        //yield* resourceMap["obs-websocket"];
++        for (let [resourceKey, resource] of resources) {
++            resourceMap[resourceKey] = yield* resource;
++        }
++
+         yield* keepAlive(Object.values(visors));
++
++                console.log('after keep alive')
+         // Spawn a watcher for further thunk matchingPairs
++        // TODO does this even run?
+         yield* takeEvery(`${API_ACTION_PREFIX}REGISTER_THUNK_${storeId}_${thunkId}`, watcher);
++        console.log('after take every')
+     }
+     function routes() {
+         function* router(ctx, next) {
+@@ -184,6 +200,9 @@ export function createThunks({ supervisor = takeEvery, } = { supervisor: takeEve
+         use: (fn) => {
+             middleware.push(fn);
+         },
++        manage: (key, resource) => {
++            resources.push([key,resource])
++        },
+         create,
+         routes,
+         /**
+diff --git a/node_modules/starfx/script/query/thunk.js b/node_modules/starfx/script/query/thunk.js
+index f8ea24a..aa2a0e2 100644
+--- a/node_modules/starfx/script/query/thunk.js
++++ b/node_modules/starfx/script/query/thunk.js
+@@ -53,6 +53,7 @@ function createThunks({ supervisor = action_js_1.takeEvery, } = { supervisor: ac
+     const actionMap = {};
+     const thunkId = id++;
+     const storeMap = new Map();
++    console.log('hi folks')
+     function* defaultMiddleware(_, next) {
+         yield* next();
+     }
+@@ -185,6 +186,7 @@ function createThunks({ supervisor = action_js_1.takeEvery, } = { supervisor: ac
+     }
+     return {
+         use: (fn) => {
++            console.log('or is it cjs?')
+             middleware.push(fn);
+         },
+         create,
+diff --git a/node_modules/starfx/src/query/thunk.ts b/node_modules/starfx/src/query/thunk.ts
+index 19b7d6d..ed80455 100644
+--- a/node_modules/starfx/src/query/thunk.ts
++++ b/node_modules/starfx/src/query/thunk.ts
+@@ -127,6 +127,7 @@ export function createThunks<Ctx extends ThunkCtx = ThunkCtx<any>>(
+ ): ThunksApi<Ctx> {
+   let signal: Signal<AnyAction, void> | undefined = undefined;
+   let storeId: number | undefined = undefined;
++  console.log('is it really pulled TS?')
+   const middleware: Middleware<Ctx>[] = [];
+   const visors: { [key: string]: Callable<unknown> } = {};
+   const middlewareMap: { [key: string]: Middleware<Ctx> } = {};

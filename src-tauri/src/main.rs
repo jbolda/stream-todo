@@ -4,9 +4,9 @@
 use tauri::Manager;
 
 fn main() {
-  #[cfg(debug_assertions)]
-  let builder = tauri::Builder::default().plugin(tauri_plugin_devtools::init());
-  #[cfg(not(debug_assertions))]
+  // #[cfg(debug_assertions)]
+  // let builder = tauri::Builder::default().plugin(tauri_plugin_devtools::init());
+  // #[cfg(not(debug_assertions))]
   let builder = tauri::Builder::default();
 
   builder
